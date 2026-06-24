@@ -8,7 +8,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Modal from "@/components/ui/Modal";
 import PageHeader from "@/components/ui/PageHeader";
 import { useToast } from "@/context/ToastContext";
-import { createUser, deleteUser, getUsers, toApiErrorMessage } from "@/services/api";
+import { createUser, getUsers, toApiErrorMessage } from "@/services/api";
 import type { AppUser } from "@/types";
 
 type UserRow = {
@@ -17,7 +17,6 @@ type UserRow = {
     email: string;
     area: string;
     role: string;
-    roleRaw: AppUser["role"];
 };
 
 export default function AdminUsersPage() {
@@ -25,11 +24,8 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
-    const [deleteOpen, setDeleteOpen] = useState(false);
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
-    const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
-    const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -89,39 +85,9 @@ export default function AdminUsersPage() {
                 email: user.email,
                 area: user.area,
                 role: user.role.toUpperCase(),
-                roleRaw: user.role,
             })),
         [users],
     );
-
-    const onRequestDelete = (row: UserRow) => {
-        setSelectedUser(row);
-        setDeleteOpen(true);
-    };
-
-    const onConfirmDelete = async () => {
-        if (!selectedUser || selectedUser.roleRaw === "admin") {
-            return;
-        }
-
-        setDeletingUserId(selectedUser.id);
-        setError("");
-        try {
-            const result = await deleteUser(selectedUser.id);
-            setUsers((prev) => prev.filter((user) => user.id !== selectedUser.id));
-            pushToast({
-                variant: "success",
-                title: "User deleted",
-                message: result.message,
-            });
-            setDeleteOpen(false);
-            setSelectedUser(null);
-        } catch (err) {
-            setError(toApiErrorMessage(err));
-        } finally {
-            setDeletingUserId(null);
-        }
-    };
 
     return (
         <section className="space-y-6">
@@ -159,20 +125,6 @@ export default function AdminUsersPage() {
                         key: "role",
                         header: "Role",
                         render: (row) => <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold">{row.role}</span>,
-                    },
-                    {
-                        key: "action",
-                        header: "Action",
-                        render: (row) => (
-                            <button
-                                type="button"
-                                onClick={() => onRequestDelete(row)}
-                                disabled={row.roleRaw === "admin" || deletingUserId === row.id}
-                                className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                {deletingUserId === row.id ? "Deleting..." : row.roleRaw === "admin" ? "Protected" : "Delete"}
-                            </button>
-                        ),
                     },
                 ]}
             />
@@ -236,37 +188,6 @@ export default function AdminUsersPage() {
                         {submitting ? <LoadingSpinner inline label="Adding..." /> : "Create User"}
                     </button>
                 </form>
-            </Modal>
-
-            <Modal open={deleteOpen} title="Delete User" onClose={() => (deletingUserId ? undefined : setDeleteOpen(false))}>
-                <div className="space-y-4">
-                    <p className="text-sm text-zinc-700">
-                        Are you sure you want to delete this user?
-                    </p>
-                    {selectedUser ? (
-                        <p className="text-xs text-zinc-500">
-                            {selectedUser.name} ({selectedUser.email})
-                        </p>
-                    ) : null}
-                    <div className="flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setDeleteOpen(false)}
-                            disabled={Boolean(deletingUserId)}
-                            className="rounded-xl border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => void onConfirmDelete()}
-                            disabled={Boolean(deletingUserId)}
-                            className="rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {deletingUserId ? <LoadingSpinner inline label="Deleting..." /> : "Confirm Delete"}
-                        </button>
-                    </div>
-                </div>
             </Modal>
         </section>
     );

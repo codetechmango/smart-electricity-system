@@ -1,28 +1,37 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserResponse
-from app.security import hash_password
+from app.security import get_current_user, hash_password, require_admin
 
 router = APIRouter()
 
+# ----------------------------
+# List Users (Admin only)
+# ----------------------------
 @router.get("", response_model=list[UserResponse])
-def list_users(db: Session = Depends(get_db)):
+def list_users(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
     return db.query(User).all()
 
 
 # ----------------------------
-# Register User
+# Create User (Admin only)
 # ----------------------------
-@router.post("/register", response_model=UserResponse)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-
+@router.post("", response_model=UserResponse)
+def create_user(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
     new_user = User(
         name=user.name,
@@ -40,14 +49,19 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
 
 # ----------------------------
-# Get User by ID
+# Get User by ID (Self or Admin)
 # ----------------------------
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this user information")
 
     user = db.query(User).filter(User.id == user_id).first()
-
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     return user

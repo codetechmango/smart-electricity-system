@@ -11,8 +11,8 @@ import MetricCard from "@/components/ui/MetricCard";
 import PageHeader from "@/components/ui/PageHeader";
 import SkeletonCard from "@/components/ui/SkeletonCard";
 import { useAuth } from "@/context/AuthContext";
-import { getAllReadings, getUserDashboard, getUsers, toApiErrorMessage } from "@/services/api";
-import type { AppUser, Reading } from "@/types";
+import { getUserDashboard, toApiErrorMessage } from "@/services/api";
+import type { Reading } from "@/types";
 
 type AiInsight = {
     id: string;
@@ -47,8 +47,6 @@ export default function UserDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [payload, setPayload] = useState<Awaited<ReturnType<typeof getUserDashboard>> | null>(null);
-    const [allUsers, setAllUsers] = useState<AppUser[]>([]);
-    const [allReadings, setAllReadings] = useState<Reading[]>([]);
 
     const loadDashboard = useCallback(async () => {
         if (!user) {
@@ -59,14 +57,8 @@ export default function UserDashboardPage() {
         setError("");
 
         try {
-            const [data, usersData, readingsData] = await Promise.all([
-                getUserDashboard(user.id),
-                getUsers(),
-                getAllReadings(),
-            ]);
+            const data = await getUserDashboard(user.id);
             setPayload(data);
-            setAllUsers(usersData);
-            setAllReadings(readingsData);
         } catch (err) {
             setError(toApiErrorMessage(err));
         } finally {
@@ -269,74 +261,13 @@ export default function UserDashboardPage() {
     }, [payload?.currentMonthUsage, payload?.readings]);
 
     const areaIntelligence = useMemo(() => {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-
-        const userCurrentMonthUsage = Number(payload?.currentMonthUsage ?? 0);
-        const areaUsers = allUsers.filter((item) => item.area === user?.area && item.role === "user");
-        const areaUserIds = areaUsers.map((item) => item.id);
-
-        const scopedUserIds = areaUserIds.length > 0 && user ? areaUserIds : user ? [user.id] : [];
-        const areaMonthlyUsage = scopedUserIds.map((userId) => {
-            return allReadings
-                .filter((reading) => {
-                    const readingDate = new Date(reading.timestamp);
-                    return (
-                        Number(reading.user_id) === Number(userId) &&
-                        readingDate.getMonth() === currentMonth &&
-                        readingDate.getFullYear() === currentYear
-                    );
-                })
-                .reduce((sum, item) => sum + Number(item.units || 0), 0);
-        });
-
-        const areaAverageUsage =
-            areaMonthlyUsage.length > 0
-                ? areaMonthlyUsage.reduce((sum, value) => sum + value, 0) / areaMonthlyUsage.length
-                : userCurrentMonthUsage;
-
-        const usersWithLowerUsage = areaMonthlyUsage.filter((value) => value < userCurrentMonthUsage).length;
-        const areaPercentile =
-            areaMonthlyUsage.length > 0 ? (usersWithLowerUsage / areaMonthlyUsage.length) * 100 : 50;
-
-        const areaComparisonText =
-            areaPercentile >= 50
-                ? `You consume more than ${areaPercentile.toFixed(0)}% users in your area.`
-                : `You consume less than ${(100 - areaPercentile).toFixed(0)}% users in your area.`;
-
-        const hourBuckets = (payload?.readings ?? []).reduce<Record<number, number>>((acc, reading) => {
-            const hour = new Date(reading.timestamp).getHours();
-            acc[hour] = (acc[hour] ?? 0) + Number(reading.units || 0);
-            return acc;
-        }, {});
-
-        let peakHour = 19;
-        const bucketEntries = Object.entries(hourBuckets);
-        if (bucketEntries.length > 0) {
-            peakHour = Number(
-                bucketEntries.reduce((highest, current) => (Number(current[1]) > Number(highest[1]) ? current : highest))[0],
-            );
-        }
-
-        const hour12 = peakHour % 12 || 12;
-        const meridiem = peakHour >= 12 ? "PM" : "AM";
-        const peakUsageText = `Your peak usage is around ${hour12}:00 ${meridiem}.`;
-
-        const usageRatio = areaAverageUsage > 0 ? userCurrentMonthUsage / areaAverageUsage : 1;
-        const upwardPenalty = comparison.percentageChange > 0 ? comparison.percentageChange * 0.5 : 0;
-        const relativePenalty = Math.max(0, (usageRatio - 1) * 60);
-        const relativeBonus = Math.max(0, (1 - usageRatio) * 20);
-        const rawScore = 100 - relativePenalty - upwardPenalty + relativeBonus;
-        const efficiencyScore = Math.max(0, Math.min(100, Math.round(rawScore)));
-
         return {
-            areaComparisonText,
-            peakUsageText,
-            efficiencyScore,
-            areaAverageUsage: Number(areaAverageUsage.toFixed(2)),
+            areaComparisonText: payload?.areaComparisonText ?? "No data available",
+            peakUsageText: payload?.peakUsageText ?? "No data available",
+            efficiencyScore: payload?.efficiencyScore ?? 100,
+            areaAverageUsage: payload?.areaAverageUsage ?? 0,
         };
-    }, [allReadings, allUsers, comparison.percentageChange, payload?.currentMonthUsage, payload?.readings, user]);
+    }, [payload]);
 
     return (
         <section className="space-y-6">

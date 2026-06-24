@@ -1,5 +1,10 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# Load environment variables from .env file
+load_dotenv()
 
 from app.database import Base, SessionLocal, engine
 import app.models
@@ -8,15 +13,20 @@ from app.routes import admin, auth, meter, user
 from app.routes.dashboard import router as dashboard_router
 from app.security import hash_password
 
-app = FastAPI()
+app = FastAPI(title="Smart Electricity System API")
+
+# Configure CORS origins from environment
+origins_str = os.getenv("ALLOWED_ORIGINS", "*")
+origins = [origin.strip() for origin in origins_str.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.include_router(dashboard_router)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
