@@ -148,11 +148,3 @@ The frontend Next.js app is configured for immediate deployment to Vercel.
 4. Click **Deploy**.
 
 ---
-
-## 📄 Portfolio Resume Description
-
-**Full-Stack & DevOps Engineer**  
-*Built SEMS, a secure enterprise-grade smart grid monitoring and anomaly detection platform using FastAPI, Next.js 16 (App Router), PostgreSQL, and Docker.*
-* **Architected Role-Based Security**: Secured endpoint pathways using JWT auth states, and implemented strict SQLAlchemy server-side filtering to prevent data leakage of consumer statistics.
-* **Designed Area Analytics Pipeline**: Designed backend database aggregators calculating neighbor usage comparisons and energy efficiency ranks, reducing API payload size and protecting PII.
-* **Engineered Cloud Infrastructure**: Created multi-stage Dockerfiles optimizing Next.js static asset bundling to standalone mode, reducing image size, and deployed services via Render Blueprints and Vercel.
