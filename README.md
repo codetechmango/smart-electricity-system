@@ -47,25 +47,6 @@ graph LR
 
 ---
 
-## 🖼️ Screenshots
-
-| Login Portal | Consumer Analytics Dashboard |
-|---|---|
-| ![Login Portal](https://raw.githubusercontent.com/codetechmango/smart-electricity-system/main/docs/login.png) | ![Dashboard](https://raw.githubusercontent.com/codetechmango/smart-electricity-system/main/docs/dashboard.png) |
-
----
-
-## ⚙️ Environment Variables
-
-| Variable | Description | Default | Location |
-|---|---|---|---|
-| `DATABASE_URL` | Database connection string | `sqlite:///./electricity.db` | Backend |
-| `JWT_SECRET_KEY` | Key for signing authentication tokens | `smart-electricity-dev-secret` | Backend |
-| `ALLOWED_ORIGINS` | CORS allowed origins (comma-separated) | `*` | Backend |
-| `NEXT_PUBLIC_API_BASE_URL` | FastAPI backend URL endpoint | `http://localhost:8000` | Frontend |
-
----
-
 ## 🚀 Local Setup
 
 ### 1. Run Backend (FastAPI)
@@ -90,7 +71,7 @@ docker-compose up --build
 
 ---
 
-## 📈 Resume Highlights
+## 📈 Highlights
 * **Secured Data Boundaries:** Hardened route entry points using JWT access authentication and role-based policies, blocking unauthorized access to PII database rows.
 * **Optimized Network Metrics:** Migrated grid neighborhood analytics to SQL-level calculations, removing the need to fetch raw consumer records client-side, reducing network payload sizes by over 90%.
 * **Standardized DevOps Delivery:** Configured multi-stage Docker containerization and automated deployments via Render Blueprints (infrastructure-as-code) and Vercel.
