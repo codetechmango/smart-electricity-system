@@ -1,4 +1,4 @@
-# Smart Electricity System (SEMS)
+# VoltPulse - Smart Electricity System 
 
 [![Deploy Backend](https://img.shields.io/badge/Deploy-Render-blue?style=flat-square)](https://render.com)
 [![Deploy Frontend](https://img.shields.io/badge/Deploy-Vercel-black?style=flat-square)](https://vercel.com)
